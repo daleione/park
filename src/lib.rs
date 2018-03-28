@@ -48,7 +48,7 @@ pub fn run(conf: Config) {
     let value = contents.parse::<Value>().unwrap();
 
     let mut envs = String::new();
-    iter_table(&value, &mut envs, &conf);
+    iter_table(&value, &mut envs, &conf, "");
     let mut env_file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -59,19 +59,30 @@ pub fn run(conf: Config) {
     }
 }
 
-fn iter_table(value: &Value, envs: &mut String, conf: &Config) {
+fn iter_table(value: &Value, envs: &mut String, conf: &Config, t: &str) {
     if let Some(table) = value.as_table() {
         for (k, v) in table {
             if v.is_table() {
-                iter_table(v, envs, conf);
+                iter_table(v, envs, conf, k);
             } else {
                 let line;
                 let key;
+                let mid;
                 let mut prefix = String::new();
                 if conf.is_upper_case() {
                     key = k.as_str().to_uppercase().to_string();
+                    mid = if t != "" {
+                        t.to_uppercase().to_string() + "_"
+                    } else {
+                        "".to_string()
+                    }
                 } else {
                     key = k.clone();
+                    mid = if t != "" {
+                        t.to_string() + "_"
+                    } else {
+                        "".to_string()
+                    }
                 }
 
                 if conf.prefix() != prefix {
@@ -80,13 +91,14 @@ fn iter_table(value: &Value, envs: &mut String, conf: &Config) {
 
                 if v.is_str() {
                     line = String::from(format!(
-                        "{}{}={}\n",
+                        "{}{}{}={}\n",
                         prefix,
+                        mid,
                         key,
                         v.as_str().unwrap().trim_matches('"')
                     ));
                 } else {
-                    line = String::from(format!("{}{}={}\n", prefix, key, v));
+                    line = String::from(format!("{}{}{}={}\n", prefix, mid, key, v));
                 }
                 envs.push_str(&line);
             }
