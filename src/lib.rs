@@ -9,13 +9,15 @@ use toml::Value;
 pub struct Config {
     config: String,
     env_file: String,
+    upper_case: bool,
 }
 
 impl Config {
-    pub fn new(config: &str, env_file: &str) -> Config {
+    pub fn new(config: &str, env_file: &str, upper_case: bool) -> Config {
         Config {
             config: String::from(config),
             env_file: String::from(env_file),
+            upper_case,
         }
     }
 
@@ -25,6 +27,10 @@ impl Config {
 
     pub fn env_file(&self) -> &String {
         &self.env_file
+    }
+
+    pub fn is_upper_case(&self) -> bool {
+        self.upper_case
     }
 }
 
@@ -36,7 +42,7 @@ pub fn run(conf: Config) {
     let value = contents.parse::<Value>().unwrap();
 
     let mut envs = String::new();
-    iter_table(&value, &mut envs);
+    iter_table(&value, &mut envs, &conf);
     let mut env_file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -47,21 +53,30 @@ pub fn run(conf: Config) {
     }
 }
 
-fn iter_table(value: &Value, envs: &mut String) {
+fn iter_table(value: &Value, envs: &mut String, conf: &Config) {
     if let Some(table) = value.as_table() {
         for (k, v) in table {
             if v.is_table() {
-                iter_table(v, envs);
+                iter_table(v, envs, conf);
             } else {
+                let line;
+                let key;
+                if conf.is_upper_case() {
+                    key = k.as_str().to_uppercase().to_string();
+                } else {
+                    key = k.clone();
+                }
+
                 if v.is_str() {
-                    envs.push_str(&format!(
+                    line = String::from(format!(
                         "{}={}\n",
-                        k,
+                        key,
                         v.as_str().unwrap().trim_matches('"')
                     ));
                 } else {
-                    envs.push_str(&format!("{}={}\n", k, v));
+                    line = String::from(format!("{}={}\n", key, v));
                 }
+                envs.push_str(&line);
             }
         }
     }
