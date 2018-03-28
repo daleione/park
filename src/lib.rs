@@ -40,20 +40,28 @@ pub fn run(conf: Config) {
     let mut env_file = OpenOptions::new()
         .create(true)
         .write(true)
-        .open(&conf.env_file).unwrap();
+        .open(&conf.env_file)
+        .unwrap();
     if let Err(_) = env_file.write(envs.as_bytes()) {
         eprintln!("Write content to {} failed!", &conf.env_file);
     }
 }
 
 fn iter_table(value: &Value, envs: &mut String) {
-    if value.is_table() {
-        for (k, v) in value.as_table().unwrap() {
+    if let Some(table) = value.as_table() {
+        for (k, v) in table {
             if v.is_table() {
                 iter_table(v, envs);
             } else {
-                envs.push_str(&format!("{}={}\n", k, v));
-                // println!("{}={}", k, v);
+                if v.is_str() {
+                    envs.push_str(&format!(
+                        "{}={}\n",
+                        k,
+                        v.as_str().unwrap().trim_matches('"')
+                    ));
+                } else {
+                    envs.push_str(&format!("{}={}\n", k, v));
+                }
             }
         }
     }
