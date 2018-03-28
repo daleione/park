@@ -1,0 +1,10 @@
+* Park
+** Convert toml to docker env file format
+** install
+   #+BEGIN_SRC shell
+     cargo buld --release
+   #+END_SRC
+** usage
+   #+BEGIN_SRC shell
+     ./target/release/park -c <toml> -f <env_file>
+   #+END_SRC

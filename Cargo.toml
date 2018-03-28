@@ -1,0 +1,8 @@
+[package]
+name = "park"
+version = "0.1.0"
+authors = ["dalei <guoyunlei@live.com>"]
+
+[dependencies]
+toml = "0.4.5"
+clap = "2.31.2"
