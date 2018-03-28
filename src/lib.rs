@@ -9,14 +9,16 @@ use toml::Value;
 pub struct Config {
     config: String,
     env_file: String,
+    prefix: String,
     upper_case: bool,
 }
 
 impl Config {
-    pub fn new(config: &str, env_file: &str, upper_case: bool) -> Config {
+    pub fn new(config: &str, env_file: &str, upper_case: bool, prefix: &str) -> Config {
         Config {
             config: String::from(config),
             env_file: String::from(env_file),
+            prefix: String::from(prefix),
             upper_case,
         }
     }
@@ -31,6 +33,10 @@ impl Config {
 
     pub fn is_upper_case(&self) -> bool {
         self.upper_case
+    }
+
+    pub fn prefix(&self) -> String {
+        self.prefix.clone()
     }
 }
 
@@ -61,20 +67,26 @@ fn iter_table(value: &Value, envs: &mut String, conf: &Config) {
             } else {
                 let line;
                 let key;
+                let mut prefix = String::new();
                 if conf.is_upper_case() {
                     key = k.as_str().to_uppercase().to_string();
                 } else {
                     key = k.clone();
                 }
 
+                if conf.prefix() != prefix {
+                    prefix = conf.prefix();
+                }
+
                 if v.is_str() {
                     line = String::from(format!(
-                        "{}={}\n",
+                        "{}{}={}\n",
+                        prefix,
                         key,
                         v.as_str().unwrap().trim_matches('"')
                     ));
                 } else {
-                    line = String::from(format!("{}={}\n", key, v));
+                    line = String::from(format!("{}{}={}\n", prefix, key, v));
                 }
                 envs.push_str(&line);
             }
